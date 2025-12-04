@@ -67,26 +67,26 @@ export const Flags = () => {
   const client = useUnleashClient();
   const [searchValue, setSearchValue] = useState('');
   const [enabledFilter, setEnabledFilter] = useState<EnabledFilter>('all');
-  
+
   // Active overrides: flag name -> original value
   const [activeOverrides, setActiveOverrides] = useState<StoredOverrides>({});
-  
+
   // Pending overrides from localStorage (shown after hard refresh)
   const [pendingOverrides, setPendingOverrides] = useState<StoredOverrides | null>(null);
-  
+
   const hasCheckedPending = useRef(false);
 
   // On first mount, check for stored overrides that need to be restored
   useEffect(() => {
     if (hasCheckedPending.current) return;
     hasCheckedPending.current = true;
-    
+
     const stored = loadStoredOverrides();
     if (Object.keys(stored).length === 0) return;
-    
+
     const toggles = (client as unknown as { toggles: IToggle[] }).toggles;
     const staleOverrides: StoredOverrides = {};
-    
+
     for (const [flagName, originalValue] of Object.entries(stored)) {
       const toggle = toggles.find((t) => t.name === flagName);
       if (toggle) {
@@ -100,7 +100,7 @@ export const Flags = () => {
         }
       }
     }
-    
+
     if (Object.keys(staleOverrides).length > 0) {
       setPendingOverrides(staleOverrides);
     }
@@ -113,16 +113,16 @@ export const Flags = () => {
 
   const applyPendingOverrides = useCallback(() => {
     if (!pendingOverrides) return;
-    
+
     const toggles = (client as unknown as { toggles: IToggle[] }).toggles;
-    
+
     for (const [flagName, originalValue] of Object.entries(pendingOverrides)) {
       const toggle = toggles.find((t) => t.name === flagName);
       if (toggle) {
         toggle.enabled = !originalValue; // Override = opposite of original
       }
     }
-    
+
     setActiveOverrides((prev) => ({ ...prev, ...pendingOverrides }));
     setPendingOverrides(null);
     client.emit('update');
@@ -140,7 +140,7 @@ export const Flags = () => {
     if (toggle) {
       const currentValue = toggle.enabled;
       const newValue = !currentValue;
-      
+
       toggle.enabled = newValue;
 
       setActiveOverrides((prev) => {
@@ -148,13 +148,13 @@ export const Flags = () => {
         if (!(flagName in prev)) {
           return { ...prev, [flagName]: currentValue };
         }
-        
+
         // If toggling back to original, remove from overrides
         if (newValue === prev[flagName]) {
           const { [flagName]: _, ...rest } = prev;
           return rest;
         }
-        
+
         return prev;
       });
 
@@ -164,14 +164,14 @@ export const Flags = () => {
 
   const resetAllOverrides = useCallback(() => {
     const toggles = (client as unknown as { toggles: IToggle[] }).toggles;
-    
+
     Object.entries(activeOverrides).forEach(([flagName, originalValue]) => {
       const toggle = toggles.find((t) => t.name === flagName);
       if (toggle) {
         toggle.enabled = originalValue;
       }
     });
-    
+
     setActiveOverrides({});
     client.emit('update');
   }, [client, activeOverrides]);
@@ -270,74 +270,78 @@ export const Flags = () => {
                 )}
               </ToggleGroup>
             </ToolbarItem>
-            {overrideCount > 0 && (
+          </ToolbarGroup>
+        </ToolbarContent>
+        {overrideCount > 0 && (
+          <ToolbarContent>
+            <ToolbarGroup>
               <ToolbarItem>
                 <Button variant="link" onClick={resetAllOverrides}>
                   Clear {overrideCount} override{overrideCount > 1 ? 's' : ''}
                 </Button>
               </ToolbarItem>
-            )}
-          </ToolbarGroup>
-        </ToolbarContent>
+            </ToolbarGroup>
+          </ToolbarContent>
+        )}
       </Toolbar>
       <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         <DataList aria-label="Feature flags list" isCompact>
-        {filteredAndSortedFlags.map(({ name, enabled, variant }) => {
-          const isOverridden = name in activeOverrides;
-          const hasPayload = variant.payload !== undefined && variant.payload !== null;
+          {filteredAndSortedFlags.map(({ name, enabled, variant }) => {
+            const isOverridden = name in activeOverrides;
+            const hasPayload = variant.payload !== undefined && variant.payload !== null;
 
-          return (
-            <DataListItem key={name} aria-labelledby={`flag-${name}`}>
-              <DataListItemRow>
-                <DataListItemCells
-                  dataListCells={[
-                    <DataListCell key="primary">
-                      <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXs' }}>
-                        <FlexItem>
-                          <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
-                            <FlexItem>
-                              <strong id={`flag-${name}`}>{name}</strong>
-                            </FlexItem>
-                            {isOverridden && (
-                              <FlexItem>
-                                <Label color="orange" isCompact>
-                                  overridden
-                                </Label>
-                              </FlexItem>
-                            )}
-                          </Flex>
-                        </FlexItem>
-                        <FlexItem>
-                          <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
-                            <FlexItem>
-                              <small style={{ color: 'var(--pf-v6-global--Color--200)' }}>
-                                Variant: {variant.name}
-                              </small>
-                            </FlexItem>
-                            <FlexItem>
-                              <Switch
-                                isChecked={enabled}
-                                onChange={() => toggleFlagOverride(name)}
-                                aria-label={`Toggle ${name}`}
-                              />
-                            </FlexItem>
-                          </Flex>
-                        </FlexItem>
-                        {hasPayload && (
+            return (
+              <DataListItem key={name} aria-labelledby={`flag-${name}`}>
+                <DataListItemRow>
+                  <DataListItemCells
+                    dataListCells={[
+                      <DataListCell key="primary">
+                        <Flex direction={{ default: 'column' }} spaceItems={{ default: 'spaceItemsXs' }}>
                           <FlexItem>
-                            <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '0.85em', background: 'var(--pf-v6-global--BackgroundColor--200)', padding: '8px', borderRadius: '4px' }}>
-                              {JSON.stringify(variant.payload, null, 2)}
-                            </pre>
+                            <Flex spaceItems={{ default: 'spaceItemsSm' }} alignItems={{ default: 'alignItemsCenter' }}>
+                              <FlexItem>
+                                <strong id={`flag-${name}`}>{name}</strong>
+                              </FlexItem>
+                              {isOverridden && (
+                                <FlexItem>
+                                  <Label color="orange" isCompact>
+                                    overridden
+                                  </Label>
+                                </FlexItem>
+                              )}
+                            </Flex>
                           </FlexItem>
-                        )}
-                      </Flex>
-                    </DataListCell>,
-                  ]}
-                />
-              </DataListItemRow>
-            </DataListItem>
-          );
-        })}
+                          <FlexItem>
+                            <Flex justifyContent={{ default: 'justifyContentSpaceBetween' }} alignItems={{ default: 'alignItemsCenter' }}>
+                              <FlexItem>
+                                <small style={{ color: 'var(--pf-v6-global--Color--200)' }}>
+                                  Variant: {variant.name}
+                                </small>
+                              </FlexItem>
+                              <FlexItem>
+                                <Switch
+                                  isChecked={enabled}
+                                  onChange={() => toggleFlagOverride(name)}
+                                  aria-label={`Toggle ${name}`}
+                                />
+                              </FlexItem>
+                            </Flex>
+                          </FlexItem>
+                          {hasPayload && (
+                            <FlexItem>
+                              <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '0.85em', background: 'var(--pf-v6-global--BackgroundColor--200)', padding: '8px', borderRadius: '4px' }}>
+                                {JSON.stringify(variant.payload, null, 2)}
+                              </pre>
+                            </FlexItem>
+                          )}
+                        </Flex>
+                      </DataListCell>,
+                    ]}
+                  />
+                </DataListItemRow>
+              </DataListItem>
+            );
+          })}
         </DataList>
       </div>
     </div>

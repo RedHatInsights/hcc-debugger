@@ -29,3 +29,6 @@ coverage
 cypress/screenshots
 cypress/videos
 .nyc_output
+
+*storybook.log
+storybook-static
