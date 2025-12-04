@@ -40,14 +40,12 @@ interface ModuleInfo {
   bundle: string;
   bundleTitle: string;
   scope?: string;
-  module?: string;
   manifestLocation?: string;
 }
 
-const getModuleInfo = (app: string, bundle: string, bundleData: any): ModuleInfo => {
+const getModuleInfo = (app: string, bundle: string, bundleData: { bundleTitle?: string } | undefined): ModuleInfo => {
   const pathname = window.location.pathname;
   let scope: string | undefined;
-  let module: string | undefined;
   let manifestLocation: string | undefined;
 
   try {
@@ -68,15 +66,14 @@ const getModuleInfo = (app: string, bundle: string, bundleData: any): ModuleInfo
     bundle,
     bundleTitle: bundleData?.bundleTitle || bundle,
     scope,
-    module,
     manifestLocation,
   };
 };
 
 export const ActiveModule = () => {
-  const chrome = useChrome();
+  const { getApp, getBundle, getBundleData } = useChrome();
   const [moduleInfo, setModuleInfo] = useState<ModuleInfo>(() =>
-    getModuleInfo(chrome.getApp(), chrome.getBundle(), chrome.getBundleData())
+    getModuleInfo(getApp(), getBundle(), getBundleData())
   );
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   
@@ -86,9 +83,6 @@ export const ActiveModule = () => {
   const [registryError, setRegistryError] = useState<string | undefined>();
   const [scanProgress, setScanProgress] = useState<string>('');
 
-  // Track app ID for registry fetching
-  const [currentAppId, setCurrentAppId] = useState<string>(chrome.getApp());
-
   // Set up progress callback
   useEffect(() => {
     setProgressCallback(setScanProgress);
@@ -96,14 +90,12 @@ export const ActiveModule = () => {
   }, []);
 
   const updateModuleInfo = useCallback(() => {
-    const app = chrome.getApp();
-    const bundle = chrome.getBundle();
-    const bundleData = chrome.getBundleData();
+    const app = getApp();
+    const bundle = getBundle();
+    const bundleData = getBundleData();
     setModuleInfo(getModuleInfo(app, bundle, bundleData));
     setLastUpdated(new Date());
-    setCurrentAppId(app);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [getApp, getBundle, getBundleData]);
 
   const fetchRegistryEntry = useCallback(async (appname: string, pathname: string) => {
     if (!isRegistryConfigured()) {
@@ -129,19 +121,19 @@ export const ActiveModule = () => {
     updateModuleInfo();
 
     // Poll for URL changes (catches all navigation types)
+    const URL_POLL_INTERVAL_MS = 200;
     let lastUrl = window.location.href;
     const urlCheckInterval = setInterval(() => {
       if (window.location.href !== lastUrl) {
         lastUrl = window.location.href;
         updateModuleInfo();
       }
-    }, 200);
+    }, URL_POLL_INTERVAL_MS);
 
     return () => {
       clearInterval(urlCheckInterval);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [updateModuleInfo]);
 
   // Fetch registry entry when app or pathname changes
   useEffect(() => {

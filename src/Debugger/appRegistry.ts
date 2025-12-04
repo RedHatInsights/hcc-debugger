@@ -15,7 +15,11 @@ export interface AppRegistryEntry {
 
 // Cache configuration
 const CACHE_KEY = 'hcc-debugger-app-registry-v2';
-const CACHE_TTL = 1000 * 60 * 60 * 24 * 7; // 7 days
+const CACHE_TTL_DAYS = 7;
+const CACHE_TTL = 1000 * 60 * 60 * 24 * CACHE_TTL_DAYS;
+
+// API configuration
+const FETCH_CONCURRENCY = 20;
 
 // In-memory cache (keyed by appname)
 let registryCache: Map<string, AppRegistryEntry> | null = null;
@@ -36,6 +40,17 @@ function reportProgress(status: string): void {
 }
 
 type StoredRegistryData = [string, AppRegistryEntry][];
+
+/**
+ * Deduplicate registry entries by appId
+ */
+function dedupeEntries(entries: StoredRegistryData): AppRegistryEntry[] {
+  const uniqueEntries = new Map<string, AppRegistryEntry>();
+  for (const [, entry] of entries) {
+    uniqueEntries.set(entry.appId, entry);
+  }
+  return Array.from(uniqueEntries.values());
+}
 
 /**
  * Load registry from localStorage
@@ -324,7 +339,7 @@ async function buildRegistry(): Promise<Map<string, AppRegistryEntry>> {
   const repos = await fetchRepoList();
   console.log(`[AppRegistry] Found ${repos.length} repos, scanning...`);
   
-  const concurrency = 20;
+  const concurrency = FETCH_CONCURRENCY;
   let scanned = 0;
   let foundCount = 0;
   
@@ -390,12 +405,7 @@ export async function fetchAppRegistry(): Promise<AppRegistryEntry[]> {
     reportProgress('Loaded from cache');
     registryCache = new Map(stored.data);
     cacheTimestamp = stored.timestamp;
-    // Dedupe values (same entry may be stored under multiple keys)
-    const uniqueEntries = new Map<string, AppRegistryEntry>();
-    for (const [, entry] of stored.data) {
-      uniqueEntries.set(entry.appId, entry);
-    }
-    return Array.from(uniqueEntries.values());
+    return dedupeEntries(stored.data);
   }
   
   // Build fresh registry
@@ -408,11 +418,7 @@ export async function fetchAppRegistry(): Promise<AppRegistryEntry[]> {
       reportProgress('Using stale cache (no API results)');
       registryCache = new Map(stored.data);
       cacheTimestamp = stored.timestamp;
-      const uniqueEntries = new Map<string, AppRegistryEntry>();
-      for (const [, entry] of stored.data) {
-        uniqueEntries.set(entry.appId, entry);
-      }
-      return Array.from(uniqueEntries.values());
+      return dedupeEntries(stored.data);
     }
     
     cacheTimestamp = Date.now();
@@ -431,11 +437,7 @@ export async function fetchAppRegistry(): Promise<AppRegistryEntry[]> {
       reportProgress('Using stale cache (API error)');
       registryCache = new Map(stored.data);
       cacheTimestamp = stored.timestamp;
-      const uniqueEntries = new Map<string, AppRegistryEntry>();
-      for (const [, entry] of stored.data) {
-        uniqueEntries.set(entry.appId, entry);
-      }
-      return Array.from(uniqueEntries.values());
+      return dedupeEntries(stored.data);
     }
     
     throw error;
