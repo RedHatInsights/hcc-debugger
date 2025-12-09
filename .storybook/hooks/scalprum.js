@@ -10,3 +10,4 @@ export const getScalprum = () => ({
 
 export const ScalprumProvider = ({ children }) => children;
 
+
