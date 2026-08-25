@@ -10,7 +10,9 @@ export IMAGE="quay.io/cloudservices/$COMPONENT"
 export WORKSPACE=${WORKSPACE:-$APP_ROOT} # if running in jenkins, use the build's workspace
 export APP_ROOT=$(pwd)
 export NODE_BUILD_VERSION=20
-COMMON_BUILDER=https://raw.githubusercontent.com/RedHatInsights/insights-frontend-builder-common/master
+# Pinned to specific commit SHA for security (FIND-001)
+# Last updated: 2026-08-25 - commit: 2fbca10aa2ad1f6673b59946f14df98cb8e6fcad
+COMMON_BUILDER=https://raw.githubusercontent.com/RedHatInsights/insights-frontend-builder-common/2fbca10aa2ad1f6673b59946f14df98cb8e6fcad
 
 
 set -exv
