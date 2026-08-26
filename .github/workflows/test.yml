@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master ]
 
+# Least-privilege permissions (FIND-003)
+permissions:
+  contents: read
+
 jobs:
   # prerequisite for all jobs, install node modules only once
   install:
