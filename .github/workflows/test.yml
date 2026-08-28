@@ -23,7 +23,7 @@ jobs:
           node-version: 20
           cache: 'npm'
       # cache node modules for all jobs to use
-      - uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: node_modules-cache
         with:
           path: "**/node_modules"
@@ -41,7 +41,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: node_modules-cache
         with:
           path: "**/node_modules"
@@ -63,7 +63,7 @@ jobs:
         with:
           node-version: 20
           cache: 'npm'
-      - uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         id: node_modules-cache
         with:
           path: "**/node_modules"
