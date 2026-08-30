@@ -20,7 +20,7 @@ jobs:
       - name: Node setup
         uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
       # cache node modules for all jobs to use
       - uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
@@ -39,7 +39,7 @@ jobs:
       - name: Node setup
         uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
       - uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
         id: node_modules-cache
@@ -61,7 +61,7 @@ jobs:
       - name: Node setup
         uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
       - uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
         id: node_modules-cache
